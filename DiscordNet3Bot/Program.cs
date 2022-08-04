@@ -10,6 +10,8 @@
 
     public class Program
     {
+        // Don't forget to update the appsettings.json file with your bot's token and guild Id.
+
         public static Task Main() => new Program().MainAsync();
 
         public async Task MainAsync()

@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.2.32630.192
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DiscodNet3Bot", "DiscodNet3Bot\DiscodNet3Bot.csproj", "{8AB0DA01-55B2-45A4-991F-E2A66A30B4D2}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DiscordNet3Bot", "DiscordNet3Bot\DiscordNet3Bot.csproj", "{8AB0DA01-55B2-45A4-991F-E2A66A30B4D2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
