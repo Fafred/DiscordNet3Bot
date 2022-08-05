@@ -32,10 +32,14 @@
                     AlwaysDownloadUsers = true,
                     MessageCacheSize = 200,
                 }))
+                // Get our interactions in here.
                 .AddSingleton(x => new InteractionService(x.GetRequiredService<DiscordSocketClient>()))
                 .AddSingleton<Services.InteractionHandler>()
+                // Get our commands in here.
                 .AddSingleton(x => new CommandService())
-                .AddSingleton<Services.CommandHandler>())
+                .AddSingleton<Services.CommandHandler>()
+                // Hook up the databases.
+                .AddDbContext<ExampleDB.EquipmentDBEntities>())
                 .Build();
 
             using (host)
