@@ -28,8 +28,7 @@
 
         }
 
-        private async Task HandleInteraction(
-            SocketInteraction socketInteraction)
+        private async Task HandleInteraction(SocketInteraction socketInteraction)
         {
             try
             {

@@ -4,6 +4,7 @@
     using Discord.Commands;
     using Discord.Interactions;
     using Discord.WebSocket;
+    using DiscordNet3Bot.Databases.ExampleDB;
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.Hosting;
@@ -39,7 +40,7 @@
                 .AddSingleton(x => new CommandService())
                 .AddSingleton<Services.CommandHandler>()
                 // Hook up the databases.
-                .AddDbContext<ExampleDB.EquipmentDBEntities>())
+                .AddDbContext<EquipmentContext>())
                 .Build();
 
             using (host)
