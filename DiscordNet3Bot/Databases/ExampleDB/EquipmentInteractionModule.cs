@@ -42,7 +42,7 @@
             }
 
             _equipmentContext.Add(equipment);
-            _equipmentContext.SaveChanges();
+            await _equipmentContext.SaveChangesAsync();
 
             await RespondAsync($"Added item:\n{param}", ephemeral: true);
         }
@@ -77,7 +77,7 @@
             if (foundItem != null)
             {
                 _equipmentContext.Remove(foundItem);
-                _equipmentContext.SaveChanges();
+                await _equipmentContext.SaveChangesAsync();
                 await RespondAsync("Item has been removed.", ephemeral: true);
             }
             else
@@ -122,7 +122,7 @@
                 }
 
                 _equipmentContext.Update(foundItem);
-                _equipmentContext.SaveChanges();
+                await _equipmentContext.SaveChangesAsync();
 
                 await RespondAsync($"Item changed to:\n**Description:**\t`{foundItem.ItemDescription}`\n**Cost:**\t`{foundItem.CurrencyAmount} {foundItem.CurrencyType}`\n**Weight:**\t`{foundItem.WeightInCoins}`", ephemeral: true);
             }

@@ -4,6 +4,10 @@
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Configuration;
 
+    // This should be fine for personal bot use, but all of this should really
+    //  be in another library with a Data Access Layer.  That's more involved
+    //  and a bit more work and this is servicible.  I'll probably branch off
+    //  this master and do it a bit more properly.
     public partial class EquipmentContext : DbContext
     {
         private IConfiguration _configuration;
