@@ -39,7 +39,7 @@ namespace DiscordNet3Bot.Databases.ExampleDB
 
             stringBuilder.AppendLine("`".PadRight(fieldName.Length - 2, '-'));
 
-            foreach (var equipment in equipments)
+            foreach (var equipment in equipments.OrderBy(x => x.ItemDescription))
             {
                 stringBuilder.Append($"{equipment.id})".PadRight(6, ' '));
                 stringBuilder.Append((equipment.ItemDescription ?? "").PadRight(descriptionPadLength, ' '));
