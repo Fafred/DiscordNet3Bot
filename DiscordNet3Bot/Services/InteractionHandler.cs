@@ -26,6 +26,14 @@
 
             _client.InteractionCreated += HandleInteraction;
 
+            // In order to deal with errors and exceptions, should probably:
+            // Implement handling for post slash command execution:
+            //      _client.SlashCommandExecuted += HandleSlashCommandExecuted
+            //      ...HandleSlashCommandExecuted(SlashCommandInfo arg1, DiscordIInteractionContext arg2, IResult arg3)
+            // And post context command execution:
+            //      _client.ContextCommandExecuted += HandleContextCommandExecuted
+            // And post component command execution:
+            //      _client.ComponentCommandExecuted += HandleComponentCommandExecuted.
         }
 
         private async Task HandleInteraction(SocketInteraction socketInteraction)
@@ -38,6 +46,14 @@
             catch (Exception e)
             {
                 Console.WriteLine(e.ToString());
+
+                // Delete the offending interaction if there was an error and send an ephemeral
+                //  message with the error.
+                if (socketInteraction.Type == Discord.InteractionType.ApplicationCommand) {
+                    await socketInteraction.RespondAsync($"Error: {e}", ephemeral: true);
+                    await socketInteraction.GetOriginalResponseAsync()
+                        .ContinueWith(async (message) => await message.Result.DeleteAsync());
+                }
             }
         }
     }

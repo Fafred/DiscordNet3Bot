@@ -2,95 +2,153 @@
 {
     using Discord;
     using Discord.Interactions;
-    using Discord.Net;
     using Discord.WebSocket;
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.DependencyInjection;
     using System.Text;
 
+    [Group("eq", "Interact with the equipment database.")]
     public class EquipmentInteractionModules : InteractionModuleBase<SocketInteractionContext>
     {
-        private readonly IConfiguration _configuration;
         private readonly EquipmentContext _equipmentContext;
 
         public EquipmentInteractionModules(IServiceProvider services)
         {
-            _configuration = services.GetRequiredService<IConfiguration>();
             _equipmentContext = services.GetRequiredService<EquipmentContext>();
         }
 
-        public enum HandleEqCommandChoice
-        {
-            Add,
-            Remove,
-            Modify,
-            List
-        }
 
-        [SlashCommand("eq", "/eq [Add/Remove/Modify/List]")]
-        public async Task HandleEqCommand(HandleEqCommandChoice choice)
+        [SlashCommand("add", "[Description] [# of coins] [coin type (pp/ep/gp/sp/cp)] [weight in coins]")]
+        public async Task HandleAddEquipment([ComplexParameter] ComplexEquipmentParam param)
         {
-            switch (choice)
+            EquipmentModel equipment = new EquipmentModel();
+
+            equipment.ItemDescription = param.Description.Trim();
+            equipment.CurrencyAmount = param.AmountOfCoins;
+            equipment.WeightInCoins = param.WeightInCoins;
+
+            switch (param.CoinType.ToLower().Trim())
             {
-                case HandleEqCommandChoice.Add:
-                    await RespondAsync("Add", ephemeral: true);
-                    break;
-                case HandleEqCommandChoice.Remove:
-                    await RespondAsync("Remove", ephemeral: true);
-                    break;
-                case HandleEqCommandChoice.Modify:
-                    await RespondAsync("Modify", ephemeral: true);
-                    break;
-                case HandleEqCommandChoice.List:
-                    await RespondAsync(embed: EqCommandListEmbed()/*, ephemeral: true*/);
+                case "pp":
+                case "ep":
+                case "gp":
+                case "sp":
+                case "cp":
+                    equipment.CurrencyType = param.CoinType;
                     break;
                 default:
-                    await RespondAsync("Usage: /eq [Add/Remove/Modify/List]", ephemeral: true);
+                    equipment.CurrencyType = "gp";
                     break;
-            }   
+            }
+
+            _equipmentContext.Add(equipment);
+            _equipmentContext.SaveChanges();
+
+            await RespondAsync($"Added item:\n{param}", ephemeral: true);
         }
 
-        // Create the embed for listing the equipment.
-        private Embed EqCommandListEmbed()
+        [SlashCommand("list", "Lists equipment currently in the database.")]
+        public async Task HandleListEquipment()
         {
             var stringBuilder = new StringBuilder();
             var embedBuilder = new EmbedBuilder();
 
-            // Grabbing all the equipment from our database.
+            // If equipmentModels was null, then pull all the items from the db.  Either way, order alphabetically by ItemDescription.
             var equipments = _equipmentContext.Equipment.ToList<EquipmentModel>();
+            equipments.OrderBy(x => x.ItemDescription);
 
-            // This uses LINQ to go through and find the longest string in the ItemDescription field.
-            //  We take the length of the longest string and add 4 to it to ensure decent looking spacing.
-            int descriptionPadLength = equipments
-                .Select(x => (x.ItemDescription ?? "").Length)
-                .Max();
-            descriptionPadLength += 4;
-
-
-            // Nows the boring stuff - user interface.
-            stringBuilder.Append("`Description".PadRight(descriptionPadLength, ' '));
-            stringBuilder.Append("Cost".PadRight(8, ' '));
-            stringBuilder.Append("Weight (in coins)`\n");
-
-            string fieldName = stringBuilder.ToString();
-            stringBuilder.Clear();
-            stringBuilder.AppendLine("`".PadRight(fieldName.Length, '-'));
-            
-
-            foreach(var equipment in equipments)
-            {
-                stringBuilder.Append((equipment.ItemDescription ?? "").PadRight(descriptionPadLength, ' '));
-                stringBuilder.Append($"{(equipment.CurrencyAmount ?? 0)} {(equipment.CurrencyType ?? "")}".PadRight(8, ' '));
-                stringBuilder.AppendLine($"{(equipment.WeightInCoins ?? 0)}".PadRight(5,' '));
-            }
-            stringBuilder.AppendLine("`".PadLeft(fieldName.Length, '-'));
-
+            // This uses an extension method "EquipmentInfoListToField" defined in EmbedBuilderExtensions.
             embedBuilder
                 .WithTitle("Equipment List")
-                .AddField(fieldName, stringBuilder.ToString(), inline : false);
+                .WithColor(Color.Gold)
+                .EquipmentInfoListToField(equipments);
 
-            return embedBuilder.Build();
+            await RespondAsync(embed: embedBuilder.Build(), ephemeral: true);
+        }
+
+        [SlashCommand("remove", "Removes an item from the database.  [id] [description of item]")]
+        public async Task HandleRemoveEquipment(int id, string description)
+        {
+            var equipments = _equipmentContext.Equipment.ToList<EquipmentModel>();
+
+            var foundItem = equipments
+                .Find(x => x.id == id && (x.ItemDescription ?? "").Equals(description, StringComparison.OrdinalIgnoreCase));
+
+            if (foundItem != null)
+            {
+                _equipmentContext.Remove(foundItem);
+                _equipmentContext.SaveChanges();
+                await RespondAsync("Item has been removed.", ephemeral: true);
+            }
+            else
+            {
+                await RespondAsync($"Item not found: `{{**id:** *{id}*\t**desc:** *{description}*}}`");
+            }
+        }
+
+        [SlashCommand("modify", "Makes changes to an existing item in the database.  Tab through to the fields you want to change.")]
+        public async Task HandleAddEquipment(int id, string? Description = null, int? AmountOfCoins = null, string? CoinType = null, int? WeightInCoins = null)
+        {
+            EquipmentModel equipment = new EquipmentModel();
+
+            var equipments = _equipmentContext.Equipment.ToList<EquipmentModel>();
+
+            var foundItem = equipments
+                .Find(x => x.id == id);
+
+            if (foundItem == null)
+            {
+                await RespondAsync($"Item not found: {{**id:** *{id}}}");
+            }
+            else
+            {
+
+                foundItem.ItemDescription = Description ?? foundItem.ItemDescription;
+                foundItem.CurrencyAmount = AmountOfCoins ?? foundItem.CurrencyAmount;
+                foundItem.WeightInCoins = WeightInCoins ?? foundItem.WeightInCoins;
+
+                if (CoinType is not null)
+                {
+                    switch (CoinType = (CoinType.ToLower().Trim()))
+                    {
+                        case "pp":
+                        case "ep":
+                        case "gp":
+                        case "sp":
+                        case "cp":
+                            foundItem.CurrencyType = CoinType;
+                            break;
+                    }
+                }
+
+                _equipmentContext.Update(foundItem);
+                _equipmentContext.SaveChanges();
+
+                await RespondAsync($"Item changed to:\n**Description:**\t`{foundItem.ItemDescription}`\n**Cost:**\t`{foundItem.CurrencyAmount} {foundItem.CurrencyType}`\n**Weight:**\t`{foundItem.WeightInCoins}`", ephemeral: true);
+            }
         }
     }
 
+    public class ComplexEquipmentParam
+    {
+        public string Description { get; }
+        public int AmountOfCoins { get; }
+        public string CoinType { get; }
+        public int WeightInCoins { get; }
+
+        [ComplexParameterCtor]
+        public ComplexEquipmentParam(string description, int amountOfCoins, string coinType, int weightInCoins)
+        {
+            Description = description;
+            AmountOfCoins = amountOfCoins;
+            CoinType = coinType;
+            WeightInCoins = weightInCoins;
+        }
+
+        public override string ToString()
+        {
+            return $"\n**Description:**\t`{Description}`\n**Cost:**\t`{AmountOfCoins} {CoinType}`\n**Weight:**\t`{WeightInCoins}`";
+        }
+
+    }
 }

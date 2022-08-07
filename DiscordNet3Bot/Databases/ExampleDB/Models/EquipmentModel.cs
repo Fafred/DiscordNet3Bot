@@ -1,7 +1,5 @@
 ﻿namespace DiscordNet3Bot.Databases.ExampleDB
 {
-    using System.ComponentModel.DataAnnotations;
-
     public partial class EquipmentModel : DBEntity
     {
         public string? ItemDescription { get; set; }

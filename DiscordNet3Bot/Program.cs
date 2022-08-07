@@ -63,8 +63,9 @@
             var prefixCommands = serviceProvider.GetRequiredService<Services.CommandHandler>();
             await serviceProvider.GetRequiredService<Services.CommandHandler>().InitializeAsync();
 
-            client.Log += async (LogMessage logMessage) => { Console.WriteLine(logMessage.Message); };
-            slashCommands.Log += async (LogMessage logMessage) => { Console.WriteLine(logMessage.Message); };
+            client.Log += LogAsync;
+            slashCommands.Log += LogAsync;
+            serviceProvider.GetRequiredService<CommandService>().Log += LogAsync;
 
             client.Ready += async () =>
             {
@@ -76,6 +77,14 @@
             await client.StartAsync();
 
             await Task.Delay(Timeout.Infinite);
+        }
+
+        private Task LogAsync(LogMessage logMessage)
+        {
+            // This should probably write to a file, rather than outputting to console.
+            Console.WriteLine(logMessage.ToString());
+
+            return Task.CompletedTask;
         }
     }
 }
