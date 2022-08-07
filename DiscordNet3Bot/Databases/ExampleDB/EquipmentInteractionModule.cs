@@ -2,8 +2,6 @@
 {
     using Discord;
     using Discord.Interactions;
-    using Discord.WebSocket;
-    using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.DependencyInjection;
     using System.Text;
 
@@ -27,14 +25,16 @@
             equipment.CurrencyAmount = param.AmountOfCoins;
             equipment.WeightInCoins = param.WeightInCoins;
 
-            switch (param.CoinType.ToLower().Trim())
+            var coinType = param.CoinType.ToLower().Trim();
+
+            switch (coinType)
             {
                 case "pp":
                 case "ep":
                 case "gp":
                 case "sp":
                 case "cp":
-                    equipment.CurrencyType = param.CoinType;
+                    equipment.CurrencyType = coinType;
                     break;
                 default:
                     equipment.CurrencyType = "gp";
@@ -74,7 +74,7 @@
             var foundItem = equipments
                 .Find(x => x.id == id && (x.ItemDescription ?? "").Equals(description, StringComparison.OrdinalIgnoreCase));
 
-            if (foundItem != null)
+            if (foundItem is not null)
             {
                 _equipmentContext.Remove(foundItem);
                 _equipmentContext.SaveChanges();
@@ -102,6 +102,12 @@
             }
             else
             {
+                if (Description is null && AmountOfCoins is null && WeightInCoins is null && CoinType is null)
+                {
+                    // If all the inputs are null we'll create a modal.
+                    //  This is purely to show an example of how to do this; the direct command interface is faster.
+
+                }
 
                 foundItem.ItemDescription = Description ?? foundItem.ItemDescription;
                 foundItem.CurrencyAmount = AmountOfCoins ?? foundItem.CurrencyAmount;
@@ -127,6 +133,11 @@
                 await RespondAsync($"Item changed to:\n**Description:**\t`{foundItem.ItemDescription}`\n**Cost:**\t`{foundItem.CurrencyAmount} {foundItem.CurrencyType}`\n**Weight:**\t`{foundItem.WeightInCoins}`", ephemeral: true);
             }
         }
+    }
+
+    public class ModifyModal : IModal
+    {
+        public string Title => "Modify an item";
     }
 
     public class ComplexEquipmentParam
